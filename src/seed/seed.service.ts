@@ -2,11 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
+import { Model } from 'mongoose';
 import { PokeResponse } from './interfaces/poke-response.interface';
+import { Pokemon } from 'src/pokemon/entities/pokemon.entity';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class SeedService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+
+    @InjectModel(Pokemon.name)
+    private readonly pokemonModel: Model<Pokemon>,
+  ) {}
 
   async executeSeed() {
     const { data } = await firstValueFrom(
@@ -20,12 +28,12 @@ export class SeedService {
         ),
     );
 
-    data.results.forEach(({ name, url }) => {
+    data.results.forEach(async ({ name, url }) => {
       const segments = url.split('/');
       const no: number = +segments[segments.length - 2];
-      console.log({ name, no });
+      const pokemon = await this.pokemonModel.create({ name, no });
     });
 
-    return data.results;
+    return 'Seed Executed';
   }
 }
